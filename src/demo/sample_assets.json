@@ -1,0 +1,63 @@
+{
+  "192.168.1.1": {
+    "ip_address": "192.168.1.1",
+    "mac_address": "a4:bb:6d:11:22:33",
+    "hostname": "router",
+    "vendor": "Intel",
+    "device_type": "网络设备",
+    "os_guess": "Linux",
+    "open_ports": [
+      22,
+      23,
+      80,
+      443
+    ],
+    "services": {
+      "http": "lighttpd",
+      "ssh": "Dropbear SSH"
+    },
+    "first_seen": "2025-08-20T17:51:00.734405883+08:00",
+    "last_seen": "2025-08-20T17:51:00.734406026+08:00",
+    "is_active": true
+  },
+  "192.168.1.10": {
+    "ip_address": "192.168.1.10",
+    "mac_address": "00:50:56:12:34:56",
+    "hostname": "web-server-01",
+    "vendor": "VMware",
+    "device_type": "虚拟机",
+    "os_guess": "Linux",
+    "open_ports": [
+      22,
+      80,
+      443
+    ],
+    "services": {
+      "http": "Apache/2.4.41",
+      "ssh": "OpenSSH 8.0"
+    },
+    "first_seen": "2025-08-20T17:51:00.734167077+08:00",
+    "last_seen": "2025-08-20T17:51:00.734167257+08:00",
+    "is_active": true
+  },
+  "192.168.1.20": {
+    "ip_address": "192.168.1.20",
+    "mac_address": "d4:be:d9:aa:bb:cc",
+    "hostname": "workstation-01",
+    "vendor": "Dell",
+    "device_type": "Windows工作站",
+    "os_guess": "Windows",
+    "open_ports": [
+      135,
+      445,
+      3389
+    ],
+    "services": {
+      "rdp": "Terminal Services",
+      "smb": "Windows SMB"
+    },
+    "first_seen": "2025-08-20T17:51:00.734384686+08:00",
+    "last_seen": "2025-08-20T17:51:00.734384859+08:00",
+    "is_active": true
+  }
+}

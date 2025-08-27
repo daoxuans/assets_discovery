@@ -1,0 +1,52 @@
+# 资产发现系统配置文件示例
+
+# 流量捕获配置
+capture:
+  interface: ""          # 网络接口名称，留空会列出可用接口
+  snap_len: 65536        # 捕获数据包的最大长度
+  promiscuous: true      # 是否开启混杂模式
+  timeout: "30s"         # 捕获超时时间
+  buffer_size: 2097152   # 缓冲区大小（2MB）
+  workers: 4             # 工作协程数量
+
+# 协议解析配置
+parser:
+  enabled_protocols:     # 启用的协议解析
+    - "arp"
+    - "dhcp"
+    - "http"
+    - "https"
+    - "dns"
+    - "smb"
+    - "mdns"
+  max_packets: 0         # 最大处理包数，0表示无限制
+  asset_timeout: 30      # 资产超时时间（分钟）
+
+# 存储配置
+storage:
+  type: "file"           # 存储类型：file, elasticsearch, memory
+  
+  # 文件存储配置
+  file:
+    output_dir: "./output"
+    format: "json"       # 输出格式：json, csv
+    
+  # Elasticsearch存储配置
+  elasticsearch:
+    urls:
+      - "http://localhost:9200"
+    username: ""
+    password: ""
+    index: "assets"
+
+# Web服务配置
+server:
+  port: 8080
+  enabled: true
+
+# 告警配置
+alerting:
+  enabled: false
+  webhook_url: ""
+  email_to: []
+  alert_rules: []
