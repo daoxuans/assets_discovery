@@ -201,8 +201,10 @@ func (am *AssetManager) loadExistingAssets() {
 	am.mutex.Lock()
 	defer am.mutex.Unlock()
 
-	for _, asset := range assets {
-		am.assets[asset.ID] = asset
+	for _, assetInterface := range assets {
+		if asset, ok := assetInterface.(*Asset); ok {
+			am.assets[asset.ID] = asset
+		}
 	}
 
 	log.Printf("加载了 %d 个现有资产", len(assets))
