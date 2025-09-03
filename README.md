@@ -29,7 +29,7 @@
 
 ```bash
 # 1. 克隆代码
-cd /opt/assets_discovery/src
+cd /opt/assets_discovery
 
 # 2. 安装依赖
 go mod tidy

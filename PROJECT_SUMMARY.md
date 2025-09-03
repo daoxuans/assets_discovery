@@ -7,7 +7,7 @@
 ## 项目结构
 
 ```
-/opt/assets_discovery/src/
+/opt/assets_discovery/
 ├── main.go                    # 主程序入口
 ├── go.mod                     # Go模块文件
 ├── config.yaml                # 配置文件示例
