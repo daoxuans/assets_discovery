@@ -17,206 +17,217 @@
 镜像流量 → 流量捕获 → 协议解析 → 特征提取 → 资产关联 → 存储输出
 ```
 
-## 安装说明
+## 快速开始
 
-### 依赖要求
-
-- Go 1.21+
-- libpcap开发库
-- 可选：Elasticsearch（用于高级存储和搜索）
-
-### 编译安装
+### 安装依赖
 
 ```bash
-# 1. 克隆代码
+# Ubuntu/Debian
+sudo apt-get update
+sudo apt-get install -y libpcap-dev build-essential
+
+# CentOS/RHEL
+sudo yum install -y libpcap-devel gcc make
+```
+
+### 编译程序
+
+```bash
+# 进入项目目录
 cd /opt/assets_discovery
 
-# 2. 安装依赖
-go mod tidy
+# 编译
+make build
 
-# 3. 编译
-go build -o assets_discovery main.go
-
-# 4. 安装libpcap（Ubuntu/Debian）
-sudo apt-get install libpcap-dev
-
-# 或者（CentOS/RHEL）
-sudo yum install libpcap-devel
+# 或者使用Go直接编译
+go build -o build/assets_discovery main.go
 ```
 
-## 使用方法
+### 基本使用
 
-### 1. 基本使用
+#### 1. 实时监听网络接口
 
 ```bash
-# 列出可用的网络接口
-sudo ./assets_discovery live
+# 查看可用网络接口
+sudo ./build/assets_discovery live
 
-# 监听指定网络接口
-sudo ./assets_discovery live -i eth0
+# 监听指定接口
+sudo ./build/assets_discovery live -i eth0
 
-# 分析离线pcap文件
-./assets_discovery offline -f capture.pcap
+# 使用配置文件
+sudo ./build/assets_discovery live --config config.yaml
 ```
 
-### 2. 配置文件
+#### 2. 离线分析pcap文件
 
-创建配置文件 `config.yaml`：
+```bash
+# 分析单个pcap文件
+./build/assets_discovery offline -f capture.pcap
+
+# 分析多个文件
+./build/assets_discovery offline -f "*.pcap"
+```
+
+## 配置说明
+
+主要配置文件 `config.yaml`:
 
 ```yaml
+# 流量捕获配置
 capture:
-  interface: "eth0"
-  workers: 4
+  interface: "eth0"          # 网络接口名称
+  snap_len: 65536           # 捕获包长度
+  promiscuous: true         # 混杂模式
+  timeout: "30s"            # 超时时间
+  buffer_size: 2097152      # 缓冲区大小
+  workers: 4                # 工作协程数
 
-storage:
-  type: "file"
-  file:
-    output_dir: "./output"
-    format: "json"
-
+# 协议解析配置
 parser:
-  enabled_protocols:
+  enabled_protocols:        # 启用的协议
     - "arp"
     - "dhcp"
     - "http"
+    - "https"
     - "dns"
-```
+    - "smb"
+    - "mdns"
+  max_packets: 0           # 最大处理包数(0=无限制)
+  asset_timeout: 30        # 资产超时时间(分钟)
 
-使用配置文件：
-
-```bash
-./assets_discovery live --config config.yaml
-```
-
-### 3. 高级功能
-
-#### Elasticsearch存储
-
-```yaml
+# 存储配置
 storage:
-  type: "elasticsearch"
+  type: "file"             # 存储类型: file, elasticsearch, memory
+  file:
+    output_dir: "./output"
+    format: "json"
   elasticsearch:
-    urls:
-      - "http://localhost:9200"
-    index: "network_assets"
-```
+    urls: ["http://localhost:9200"]
+    index: "assets"
 
-#### 告警配置
-
-```yaml
-alerting:
+# 服务配置
+server:
+  port: 8080
   enabled: true
-  webhook_url: "http://your-webhook-url"
-  alert_rules:
-    - "new_asset"
-    - "unknown_device"
+
+# 告警配置
+alerting:
+  enabled: false
+  webhook_url: ""
 ```
 
-## 输出格式
+## 数据输出格式
 
-系统会生成包含以下信息的资产记录：
+系统输出标准JSON格式的资产信息：
 
 ```json
 {
-  "id": "mac_aa:bb:cc:dd:ee:ff",
-  "ip_address": "192.168.1.100",
-  "mac_address": "aa:bb:cc:dd:ee:ff",
-  "hostname": "workstation-01",
-  "vendor": "Dell Inc.",
-  "device_type": "工作站",
-  "os_info": {
-    "family": "Windows",
-    "version": "Windows 10",
-    "confidence": 0.85
+  "ip_address": "192.168.1.10",
+  "mac_address": "00:50:56:12:34:56",
+  "hostname": "web-server-01",
+  "vendor": "VMware",
+  "device_type": "虚拟机",
+  "os_guess": "Linux",
+  "open_ports": [22, 80, 443],
+  "services": {
+    "http": "Apache/2.4.41",
+    "ssh": "OpenSSH 8.0"
   },
-  "open_ports": [
-    {
-      "port": 80,
-      "protocol": "tcp",
-      "service": "HTTP",
-      "state": "open"
-    }
-  ],
-  "services": [
-    {
-      "name": "http",
-      "version": "Apache/2.4.41",
-      "port": 80
-    }
-  ],
-  "first_seen": "2025-01-20T10:00:00Z",
-  "last_seen": "2025-01-20T15:30:00Z",
+  "first_seen": "2025-01-01T00:00:00Z",
+  "last_seen": "2025-01-01T12:00:00Z",
   "is_active": true,
-  "confidence": 0.92
+  "confidence": 0.95
 }
 ```
 
-## 支持的协议
+## 支持的协议和识别能力
 
-- **ARP**: 获取IP-MAC地址映射
-- **DHCP**: 提取主机名、操作系统指纹
-- **HTTP/HTTPS**: 分析User-Agent、Server头、SSL证书
+### 协议解析
+- **ARP**: IP-MAC地址映射
+- **DHCP**: 主机名、操作系统指纹
+- **HTTP/HTTPS**: User-Agent、Server头、SSL证书信息
 - **DNS**: 域名解析记录
 - **SMB**: Windows网络共享信息
 - **mDNS**: 局域网服务发现
 
-## 安全考虑
+### 资产识别
+- **厂商识别**: 基于MAC地址OUI数据库
+- **操作系统**: Windows、Linux、macOS等
+- **设备类型**: 服务器、工作站、虚拟机、网络设备
+- **服务识别**: Web服务、数据库、远程管理等
 
-1. **权限要求**: 监听网络接口需要root权限
-2. **数据隐私**: 系统仅提取协议头信息，不存储应用层敏感数据
-3. **合规使用**: 确保获得网络监控授权
+## 部署建议
 
-## 性能优化
+### 网络部署
+1. 将系统部署在核心交换机的镜像端口
+2. 确保镜像端口配置正确，能够复制全网流量
+3. 使用专用的管理网络进行远程管理
 
-- 使用多个工作协程并行处理数据包
-- BPF过滤器减少不必要的数据包处理
-- 支持PF_RING等高性能抓包技术
-- 异步存储避免阻塞处理流程
+### 性能调优
+1. 根据网络流量调整工作协程数量
+2. 适当设置缓冲区大小避免丢包
+3. 使用SSD存储提高I/O性能
+4. 考虑使用Elasticsearch集群提高存储性能
 
-## 故障排查
+### 安全考虑
+1. 系统只解析协议头信息，不存储敏感数据
+2. 可配置MAC地址哈希化保护隐私
+3. 建议运行在隔离的管理网络中
+4. 定期更新指纹库和规则
 
-### 常见问题
+## 常见问题
 
-1. **权限不足**
-   ```bash
-   sudo setcap cap_net_raw,cap_net_admin=eip ./assets_discovery
-   ```
-
-2. **找不到网络接口**
-   ```bash
-   ip link show
-   ```
-
-3. **pcap文件格式错误**
-   确保pcap文件是标准格式，可用tcpdump或Wireshark验证
-
-### 调试模式
-
+### 1. 权限问题
 ```bash
-# 启用详细日志
-./assets_discovery live -i eth0 --verbose
-
-# 限制处理包数量进行测试
-./assets_discovery offline -f test.pcap --max-packets 1000
+# 需要root权限或设置capabilities
+sudo setcap cap_net_raw,cap_net_admin=eip ./assets_discovery
 ```
 
-## 扩展开发
+### 2. 找不到网络接口
+```bash
+# 查看可用接口
+ip link show
+./assets_discovery live  # 会列出可用接口
+```
 
-系统采用模块化设计，支持以下扩展：
+### 3. 性能问题
+- 调整workers数量：建议设置为CPU核心数
+- 增大缓冲区：在高流量环境下增大buffer_size
+- 使用BPF过滤器：只捕获需要的流量
 
-- 添加新的协议解析器
-- 实现自定义存储后端
-- 扩展资产识别规则
-- 集成外部威胁情报
+### 4. 存储问题
+- 文件存储：确保有足够的磁盘空间
+- Elasticsearch：检查集群状态和索引配置
+
+## 开发和贡献
+
+### 项目结构
+```
+├── main.go              # 主程序入口
+├── cmd/                 # 命令行界面
+├── internal/            # 核心业务逻辑
+│   ├── capture/        # 流量捕获
+│   ├── parser/         # 协议解析
+│   ├── assets/         # 资产管理
+│   ├── storage/        # 存储层
+│   └── config/         # 配置管理
+├── config.yaml         # 配置文件示例
+├── Makefile           # 构建脚本
+└── README.md          # 说明文档
+```
+
+### 添加新协议支持
+1. 在 `internal/parser/` 中实现协议解析器
+2. 在 `internal/assets/` 中添加资产识别规则
+3. 更新配置文件中的协议列表
+4. 添加相应的测试用例
 
 ## 许可证
 
-本项目基于MIT许可证开源。
-
-## 贡献
-
-欢迎提交Issue和Pull Request来改进项目。
+本项目采用MIT许可证，详见LICENSE文件。
 
 ## 联系方式
 
-如有问题请联系项目维护者。
+- 项目地址: https://github.com/your-org/assets_discovery
+- 问题反馈: https://github.com/your-org/assets_discovery/issues
+- 技术支持: support@example.com

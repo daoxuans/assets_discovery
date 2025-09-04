@@ -1,6 +1,6 @@
 # Makefile for Assets Discovery System
 
-.PHONY: build clean install deps test run-live run-offline help
+.PHONY: build clean install deps test lint fmt run-live run-offline config prepare package help
 
 # 变量定义
 BINARY_NAME=assets_discovery
@@ -27,6 +27,9 @@ deps:
 clean:
 	@echo "Cleaning build files..."
 	@rm -rf $(BUILD_DIR)
+	@rm -rf output
+	@rm -rf logs
+	@rm -rf release
 	@go clean
 
 # 安装到系统
@@ -54,16 +57,18 @@ fmt:
 # 实时监听模式（需要root权限）
 run-live: build
 	@echo "Starting live capture mode..."
-	@sudo $(BUILD_DIR)/$(BINARY_NAME) live
+	@echo "Usage: sudo $(BUILD_DIR)/$(BINARY_NAME) live -i <interface>"
+	@echo "Example: sudo $(BUILD_DIR)/$(BINARY_NAME) live -i eth0"
 
 # 离线分析模式
 run-offline: build
 	@echo "Starting offline analysis mode..."
-	@$(BUILD_DIR)/$(BINARY_NAME) offline -f sample.pcap
+	@echo "Usage: $(BUILD_DIR)/$(BINARY_NAME) offline -f <pcap_file>"
+	@echo "Example: $(BUILD_DIR)/$(BINARY_NAME) offline -f capture.pcap"
 
-# 创建示例配置
+# 创建配置文件
 config:
-	@echo "Creating example configuration..."
+	@echo "Creating configuration file..."
 	@cp config.yaml assets_discovery.yaml
 	@echo "Configuration created: assets_discovery.yaml"
 
@@ -104,8 +109,8 @@ help:
 	@echo "  test               - Run tests"
 	@echo "  lint               - Run code linter"
 	@echo "  fmt                - Format code"
-	@echo "  run-live           - Run live capture mode (requires root)"
-	@echo "  run-offline        - Run offline analysis mode"
+	@echo "  run-live           - Show usage for live capture mode"
+	@echo "  run-offline        - Show usage for offline analysis mode"
 	@echo "  config             - Create example configuration"
 	@echo "  install-deps-ubuntu - Install system deps on Ubuntu/Debian"
 	@echo "  install-deps-centos - Install system deps on CentOS/RHEL"

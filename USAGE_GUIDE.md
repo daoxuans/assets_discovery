@@ -14,9 +14,6 @@
    ```bash
    # 查看当前目录结构
    ls -la /opt/assets_discovery/
-   
-   # 查看演示程序测试结果
-   cat /opt/assets_discovery/demo/sample_assets.json
    ```
 
 ### 第二步：安装系统

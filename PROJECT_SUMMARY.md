@@ -14,9 +14,7 @@
 ├── README.md                  # 详细使用说明
 ├── Makefile                   # 构建脚本
 ├── install.sh                 # 自动安装脚本
-├── test.sh                    # 快速测试脚本
-├── demo/                      # 演示程序
-│   └── main.go               # 简化版本的演示程序
+
 ├── cmd/                       # 命令行界面
 │   └── root.go               # CLI命令定义
 └── internal/                  # 内部包
