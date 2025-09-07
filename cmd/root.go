@@ -38,24 +38,21 @@ func init() {
 	rootCmd.AddCommand(offlineCmd)
 }
 
-// initConfig reads in config file and ENV variables if set.
+// initConfig reads in config file.
 func initConfig() {
+	// 首先设置默认值
+	config.SetDefaults()
+
 	if cfgFile != "" {
 		viper.SetConfigFile(cfgFile)
-	} else {
-		home, err := os.UserHomeDir()
-		cobra.CheckErr(err)
-
-		viper.AddConfigPath(home)
-		viper.AddConfigPath(".")
-		viper.SetConfigType("yaml")
-		viper.SetConfigName(".assets_discovery")
-	}
-
-	viper.AutomaticEnv()
-
-	if err := viper.ReadInConfig(); err == nil {
+		if err := viper.ReadInConfig(); err != nil {
+			fmt.Printf("错误: 无法读取指定的配置文件 '%s': %v\n", cfgFile, err)
+			os.Exit(1)
+		}
 		fmt.Fprintln(os.Stderr, "Using config file:", viper.ConfigFileUsed())
+	} else {
+		fmt.Fprintln(os.Stderr, "提示: 未指定配置文件，将使用默认配置")
+		fmt.Fprintln(os.Stderr, "      如需自定义配置，请使用 --config 参数指定配置文件")
 	}
 }
 

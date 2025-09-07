@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"sync"
 	"time"
 
@@ -14,63 +15,63 @@ var (
 
 // Config 系统配置结构
 type Config struct {
-	Capture  CaptureConfig  `yaml:"capture"`
-	Parser   ParserConfig   `yaml:"parser"`
-	Storage  StorageConfig  `yaml:"storage"`
-	Server   ServerConfig   `yaml:"server"`
-	Alerting AlertingConfig `yaml:"alerting"`
+	Capture  CaptureConfig  `yaml:"capture" mapstructure:"capture"`
+	Parser   ParserConfig   `yaml:"parser" mapstructure:"parser"`
+	Storage  StorageConfig  `yaml:"storage" mapstructure:"storage"`
+	Server   ServerConfig   `yaml:"server" mapstructure:"server"`
+	Alerting AlertingConfig `yaml:"alerting" mapstructure:"alerting"`
 }
 
 // CaptureConfig 流量捕获配置
 type CaptureConfig struct {
-	Interface   string        `yaml:"interface"`
-	SnapLen     int           `yaml:"snap_len"`
-	Promiscuous bool          `yaml:"promiscuous"`
-	Timeout     time.Duration `yaml:"timeout"`
-	BufferSize  int           `yaml:"buffer_size"`
-	Workers     int           `yaml:"workers"`
+	Interface   string        `yaml:"interface" mapstructure:"interface"`
+	SnapLen     int           `yaml:"snap_len" mapstructure:"snap_len"`
+	Promiscuous bool          `yaml:"promiscuous" mapstructure:"promiscuous"`
+	Timeout     time.Duration `yaml:"timeout" mapstructure:"timeout"`
+	BufferSize  int           `yaml:"buffer_size" mapstructure:"buffer_size"`
+	Workers     int           `yaml:"workers" mapstructure:"workers"`
 }
 
 // ParserConfig 协议解析配置
 type ParserConfig struct {
-	EnabledProtocols []string `yaml:"enabled_protocols"`
-	MaxPackets       int      `yaml:"max_packets"`
-	AssetTimeout     int      `yaml:"asset_timeout"` // 资产超时时间(分钟)
+	EnabledProtocols []string `yaml:"enabled_protocols" mapstructure:"enabled_protocols"`
+	MaxPackets       int      `yaml:"max_packets" mapstructure:"max_packets"`
+	AssetTimeout     int      `yaml:"asset_timeout" mapstructure:"asset_timeout"` // 资产超时时间(分钟)
 }
 
 // StorageConfig 存储配置
 type StorageConfig struct {
-	Type          string     `yaml:"type"` // elasticsearch, file, memory
-	Elasticsearch ESConfig   `yaml:"elasticsearch"`
-	File          FileConfig `yaml:"file"`
+	Type          string     `yaml:"type" mapstructure:"type"` // elasticsearch, file, memory
+	Elasticsearch ESConfig   `yaml:"elasticsearch" mapstructure:"elasticsearch"`
+	File          FileConfig `yaml:"file" mapstructure:"file"`
 }
 
 // ESConfig Elasticsearch配置
 type ESConfig struct {
-	URLs     []string `yaml:"urls"`
-	Username string   `yaml:"username"`
-	Password string   `yaml:"password"`
-	Index    string   `yaml:"index"`
+	URLs     []string `yaml:"urls" mapstructure:"urls"`
+	Username string   `yaml:"username" mapstructure:"username"`
+	Password string   `yaml:"password" mapstructure:"password"`
+	Index    string   `yaml:"index" mapstructure:"index"`
 }
 
 // FileConfig 文件存储配置
 type FileConfig struct {
-	OutputDir string `yaml:"output_dir"`
-	Format    string `yaml:"format"` // json, csv
+	OutputDir string `yaml:"output_dir" mapstructure:"output_dir"`
+	Format    string `yaml:"format" mapstructure:"format"` // json, csv
 }
 
 // ServerConfig Web服务配置
 type ServerConfig struct {
-	Port    int  `yaml:"port"`
-	Enabled bool `yaml:"enabled"`
+	Port    int  `yaml:"port" mapstructure:"port"`
+	Enabled bool `yaml:"enabled" mapstructure:"enabled"`
 }
 
 // AlertingConfig 告警配置
 type AlertingConfig struct {
-	Enabled    bool     `yaml:"enabled"`
-	WebhookURL string   `yaml:"webhook_url"`
-	EmailTo    []string `yaml:"email_to"`
-	AlertRules []string `yaml:"alert_rules"`
+	Enabled    bool     `yaml:"enabled" mapstructure:"enabled"`
+	WebhookURL string   `yaml:"webhook_url" mapstructure:"webhook_url"`
+	EmailTo    []string `yaml:"email_to" mapstructure:"email_to"`
+	AlertRules []string `yaml:"alert_rules" mapstructure:"alert_rules"`
 }
 
 // GetConfig 获取全局配置
@@ -83,20 +84,17 @@ func GetConfig() *Config {
 
 // loadConfig 加载配置
 func loadConfig() *Config {
-	// 设置默认值
-	setDefaults()
-
 	config := &Config{}
 	if err := viper.Unmarshal(config); err != nil {
-		// 使用默认配置
+		fmt.Printf("警告: 配置解析失败 (%v)，使用硬编码默认配置\n", err)
 		config = getDefaultConfig()
 	}
 
 	return config
 }
 
-// setDefaults 设置默认配置值
-func setDefaults() {
+// SetDefaults 设置默认配置值
+func SetDefaults() {
 	// 捕获配置默认值
 	viper.SetDefault("capture.snap_len", 65536)
 	viper.SetDefault("capture.promiscuous", true)
