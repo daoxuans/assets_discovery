@@ -24,17 +24,40 @@ func (ms *MemoryStorage) SaveAsset(asset interface{}) error {
 	ms.mutex.Lock()
 	defer ms.mutex.Unlock()
 
-	// 这里需要从asset中提取ID，为了避免循环导入，使用反射或类型断言
-	if assetMap, ok := asset.(map[string]interface{}); ok {
-		if id, exists := assetMap["id"]; exists {
+	var assetID string
+	var assetData interface{}
+
+	// 处理不同类型的资产对象
+	switch v := asset.(type) {
+	case map[string]interface{}:
+		// 处理 map 类型
+		if id, exists := v["id"]; exists {
 			if idStr, ok := id.(string); ok {
-				ms.data[idStr] = asset
-				return nil
+				assetID = idStr
+				assetData = v
+			}
+		}
+	default:
+		// 处理结构体类型，使用JSON转换
+		if assetBytes, err := json.Marshal(asset); err == nil {
+			var assetMap map[string]interface{}
+			if err := json.Unmarshal(assetBytes, &assetMap); err == nil {
+				if id, exists := assetMap["id"]; exists {
+					if idStr, ok := id.(string); ok {
+						assetID = idStr
+						assetData = assetMap
+					}
+				}
 			}
 		}
 	}
 
-	return fmt.Errorf("无法提取资产ID")
+	if assetID == "" {
+		return fmt.Errorf("无法提取资产ID")
+	}
+
+	ms.data[assetID] = assetData
+	return nil
 }
 
 // GetAsset 获取资产

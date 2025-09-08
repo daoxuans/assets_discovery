@@ -44,18 +44,41 @@ func (fs *FileStorage) SaveAsset(asset interface{}) error {
 	fs.mutex.Lock()
 	defer fs.mutex.Unlock()
 
-	// 提取资产ID
-	if assetMap, ok := asset.(map[string]interface{}); ok {
-		if id, exists := assetMap["id"]; exists {
+	var assetID string
+	var assetData interface{}
+
+	// 处理不同类型的资产对象
+	switch v := asset.(type) {
+	case map[string]interface{}:
+		// 处理 map 类型
+		if id, exists := v["id"]; exists {
 			if idStr, ok := id.(string); ok {
-				fs.data[idStr] = asset
-				// 立即写入文件
-				return fs.saveToFile()
+				assetID = idStr
+				assetData = v
+			}
+		}
+	default:
+		// 处理结构体类型，尝试使用反射或JSON转换
+		if assetBytes, err := json.Marshal(asset); err == nil {
+			var assetMap map[string]interface{}
+			if err := json.Unmarshal(assetBytes, &assetMap); err == nil {
+				if id, exists := assetMap["id"]; exists {
+					if idStr, ok := id.(string); ok {
+						assetID = idStr
+						assetData = assetMap
+					}
+				}
 			}
 		}
 	}
 
-	return fmt.Errorf("无法提取资产ID")
+	if assetID == "" {
+		return fmt.Errorf("无法提取资产ID")
+	}
+
+	fs.data[assetID] = assetData
+	// 立即写入文件
+	return fs.saveToFile()
 }
 
 // GetAsset 获取资产

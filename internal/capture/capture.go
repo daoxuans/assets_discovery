@@ -122,10 +122,8 @@ func (ce *CaptureEngine) processPackets(handle *pcap.Handle) error {
 	log.Printf("流量捕获已启动，使用 %d 个工作协程", ce.config.Capture.Workers)
 
 	// 等待停止信号或工作协程结束
-	select {
-	case <-ce.stopCh:
-		log.Println("收到停止信号")
-	}
+	<-ce.stopCh
+	log.Println("收到停止信号")
 
 	ce.wg.Wait()
 	log.Println("流量捕获已停止")
